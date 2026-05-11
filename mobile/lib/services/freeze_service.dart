@@ -35,11 +35,14 @@ class FreezeService extends ChangeNotifier {
     error = null;
     notifyListeners();
     try {
-      final res = await http.get(Uri.parse('$_base/api/freeze/proposals'))
+      final res = await http
+          .get(Uri.parse('$_base/api/freeze/proposals'))
           .timeout(const Duration(seconds: 10));
       if (res.statusCode == 200) {
         final list = jsonDecode(res.body) as List;
-        proposals = list.map((e) => FreezeProposal.fromJson(e as Map<String, dynamic>)).toList();
+        proposals = list
+            .map((e) => FreezeProposal.fromJson(e as Map<String, dynamic>))
+            .toList();
       } else {
         error = 'Server error ${res.statusCode}';
       }
@@ -51,36 +54,61 @@ class FreezeService extends ChangeNotifier {
     }
   }
 
-  Future<bool> approveFreeze({
+  /// Build unsigned XDR from backend. The caller MUST sign this XDR
+  /// with their admin wallet before calling [submitSignedVote].
+  Future<String?> buildFreezeXdr({
     required String assetCode,
     required String issuer,
     required String target,
     required String adminKey,
   }) async {
     try {
-      // Step 1: build unsigned XDR
-      final buildRes = await http
+      final res = await http
           .post(
             Uri.parse('$_base/api/freeze/build'),
             headers: {'Content-Type': 'application/json'},
-            body: jsonEncode({'assetCode': assetCode, 'issuer': issuer, 'target': target, 'adminKey': adminKey}),
+            body: jsonEncode({
+              'assetCode': assetCode,
+              'issuer': issuer,
+              'target': target,
+              'adminKey': adminKey,
+            }),
           )
           .timeout(const Duration(seconds: 15));
-      if (buildRes.statusCode != 200) return false;
+      if (res.statusCode != 200) return null;
+      return (jsonDecode(res.body) as Map<String, dynamic>)['xdr'] as String;
+    } on Exception {
+      return null;
+    }
+  }
 
-      final xdr = (jsonDecode(buildRes.body) as Map<String, dynamic>)['xdr'] as String;
-
-      // Step 2: submit (signing via mobile wallet SDK would happen here in production)
-      final submitRes = await http
+  /// Submit a SIGNED XDR. The XDR must be signed by the admin's private key
+  /// before calling this method. Submitting unsigned XDR will be rejected
+  /// by the Stellar network with tx_bad_auth.
+  Future<({bool ok, String? error})> submitSignedVote({
+    required String signedXdr,
+    required String assetCode,
+    required String issuer,
+    required String target,
+  }) async {
+    try {
+      final res = await http
           .post(
             Uri.parse('$_base/api/freeze/submit'),
             headers: {'Content-Type': 'application/json'},
-            body: jsonEncode({'signedXdr': xdr, 'assetCode': assetCode, 'issuer': issuer, 'target': target}),
+            body: jsonEncode({
+              'signedXdr': signedXdr,
+              'assetCode': assetCode,
+              'issuer': issuer,
+              'target': target,
+            }),
           )
           .timeout(const Duration(seconds: 15));
-      return submitRes.statusCode == 200;
-    } on Exception {
-      return false;
+      if (res.statusCode == 200) return (ok: true, error: null);
+      final msg = (jsonDecode(res.body) as Map<String, dynamic>)['error'] as String? ?? 'Unknown error';
+      return (ok: false, error: msg);
+    } on Exception catch (e) {
+      return (ok: false, error: e.toString());
     }
   }
 }

@@ -19,3 +19,4 @@ mobile/pubspec.lock
 # Misc
 .DS_Store
 *.log
+*.db
