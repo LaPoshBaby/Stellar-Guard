@@ -2,9 +2,9 @@ name: Rust Contract CI
 
 on:
   push:
-    paths: ["contracts/**", "Cargo.toml", "Cargo.lock"]
+    paths: ["contracts/**", "Cargo.toml", "Cargo.lock", ".github/workflows/contract-ci.yml"]
   pull_request:
-    paths: ["contracts/**", "Cargo.toml", "Cargo.lock"]
+    paths: ["contracts/**", "Cargo.toml", "Cargo.lock", ".github/workflows/contract-ci.yml"]
 
 env:
   CARGO_TERM_COLOR: always
