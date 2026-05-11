@@ -1,0 +1,3 @@
+[workspace]
+members = ["contracts/freeze-governance"]
+resolver = "2"

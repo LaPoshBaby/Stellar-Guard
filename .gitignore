@@ -1,0 +1,21 @@
+# Rust
+target/
+Cargo.lock
+
+# Node
+node_modules/
+dist/
+.next/
+*.env
+!*.env.example
+
+# Flutter
+mobile/.dart_tool/
+mobile/build/
+mobile/.flutter-plugins
+mobile/.flutter-plugins-dependencies
+mobile/pubspec.lock
+
+# Misc
+.DS_Store
+*.log
