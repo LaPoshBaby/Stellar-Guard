@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:provider/provider.dart';
+import 'package:stellar_flutter_sdk/stellar_flutter_sdk.dart' as stellar;
 import '../services/freeze_service.dart';
 
 class AlertScreen extends StatefulWidget {
@@ -34,34 +35,28 @@ class _AlertScreenState extends State<AlertScreen> {
     );
     if (!authenticated) return;
 
-    // 2. Load admin public key from secure storage
-    final adminKey = await _storage.read(key: 'admin_public_key');
-    if (adminKey == null || adminKey.isEmpty) {
-      _showSnack('Admin key not configured. Set admin_public_key in secure storage.');
+    // 2. Load admin keys from secure storage
+    final adminPublicKey = await _storage.read(key: 'admin_public_key');
+    final adminSecretKey = await _storage.read(key: 'admin_secret_key');
+    if (adminPublicKey == null || adminSecretKey == null) {
+      _showSnack('Admin keys not configured. Store admin_public_key and admin_secret_key.');
       return;
     }
 
     final svc = context.read<FreezeService>();
 
-    // 3. Build unsigned XDR
+    // 3. Build unsigned XDR from backend
     final xdr = await svc.buildFreezeXdr(
       assetCode: p.assetCode,
       issuer: p.issuer,
       target: p.target,
-      adminKey: adminKey,
+      adminKey: adminPublicKey,
     );
     if (xdr == null) { _showSnack('Failed to build transaction'); return; }
 
-    // 4. Sign the XDR with the admin's private key.
-    //    In production: integrate a mobile Stellar wallet SDK (e.g. stellar_flutter_sdk)
-    //    to sign with the key stored in secure storage.
-    //    The XDR MUST be signed before submission — submitting unsigned XDR
-    //    will be rejected by the network with tx_bad_auth.
-    final signedXdr = await _signXdr(xdr, adminKey);
-    if (signedXdr == null) {
-      _showSnack('Signing not yet integrated. Connect a Stellar wallet SDK to sign.');
-      return;
-    }
+    // 4. Sign with stellar_flutter_sdk
+    final signedXdr = _signXdr(xdr, adminSecretKey);
+    if (signedXdr == null) { _showSnack('Failed to sign transaction'); return; }
 
     // 5. Submit signed XDR
     final result = await svc.submitSignedVote(
@@ -75,20 +70,16 @@ class _AlertScreenState extends State<AlertScreen> {
     if (result.ok) svc.fetchProposals();
   }
 
-  /// Sign XDR with the admin's private key.
-  /// TODO: integrate stellar_flutter_sdk or equivalent wallet SDK.
-  /// Returns null (with a clear error shown to the user) until implemented.
-  Future<String?> _signXdr(String unsignedXdr, String adminPublicKey) async {
-    // Retrieve the secret key from secure storage (never hardcode it).
-    final secretKey = await _storage.read(key: 'admin_secret_key');
-    if (secretKey == null) return null;
-
-    // TODO: use stellar_flutter_sdk KeyPair to sign:
-    // final kp = KeyPair.fromSecretSeed(secretKey);
-    // final tx = AbstractTransaction.fromEnvelopeXdr(unsignedXdr);
-    // tx.sign(kp, Network.TESTNET);
-    // return tx.toEnvelopeXdrBase64();
-    return null; // Remove this line once SDK is integrated
+  /// Sign an XDR envelope with the admin's secret key using stellar_flutter_sdk.
+  String? _signXdr(String unsignedXdr, String secretKey) {
+    try {
+      final kp = stellar.KeyPair.fromSecretSeed(secretKey);
+      final tx = stellar.AbstractTransaction.fromEnvelopeXdrString(unsignedXdr);
+      tx.sign(kp, stellar.Network.TESTNET);
+      return tx.toEnvelopeXdrBase64();
+    } catch (_) {
+      return null;
+    }
   }
 
   void _showSnack(String msg) {
