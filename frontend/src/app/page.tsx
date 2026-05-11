@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { WalletConnect } from "@/components/WalletConnect";
 import { LedgerExplorer } from "@/components/LedgerExplorer";
 import { FreezePanel } from "@/components/FreezePanel";

@@ -14,10 +14,13 @@ app.use("/api/freeze", freezeRouter);
 
 app.get("/health", (_req, res) => res.json({ status: "ok" }));
 
-const PORT = process.env.PORT ?? 4000;
-app.listen(PORT, () => console.log(`Stellar-Guard backend on :${PORT}`));
-
-// Start Horizon event monitor
-horizonMonitor.start();
+// Only bind port and start monitor when run directly (not during tests)
+if (require.main === module) {
+  const PORT = process.env.PORT ?? 4000;
+  app.listen(PORT, () => {
+    console.log(`Stellar-Guard backend on :${PORT}`);
+    horizonMonitor.start();
+  });
+}
 
 export default app;

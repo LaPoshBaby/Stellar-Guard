@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import axios from "axios";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 
@@ -13,6 +13,9 @@ interface Props { onSuspicious: (msg: string) => void; }
 export function LedgerExplorer({ onSuspicious }: Props) {
   const [transfers, setTransfers] = useState<Transfer[]>([]);
   const [loading, setLoading] = useState(true);
+  // Stable ref so the callback never triggers the useEffect dependency
+  const onSuspiciousRef = useRef(onSuspicious);
+  useEffect(() => { onSuspiciousRef.current = onSuspicious; });
 
   useEffect(() => {
     async function poll() {
@@ -20,7 +23,7 @@ export function LedgerExplorer({ onSuspicious }: Props) {
         const { data } = await axios.get<Transfer[]>(`${API}/api/transfers`);
         setTransfers(data);
         const suspicious = data.filter((t) => t.amount >= SUSPICIOUS_THRESHOLD);
-        if (suspicious.length) onSuspicious(`⚠️ ${suspicious.length} high-volume transfer(s) detected`);
+        if (suspicious.length) onSuspiciousRef.current(`⚠️ ${suspicious.length} high-volume transfer(s) detected`);
       } catch {
         // NetworkTimeout — silently retry
       } finally { setLoading(false); }
@@ -28,7 +31,7 @@ export function LedgerExplorer({ onSuspicious }: Props) {
     poll();
     const id = setInterval(poll, 10_000);
     return () => clearInterval(id);
-  }, [onSuspicious]);
+  }, []); // empty deps — runs once, uses stable ref for callback
 
   const chartData = transfers.slice(-20).map((t) => ({ ts: t.ts.slice(11, 16), amount: t.amount }));
 

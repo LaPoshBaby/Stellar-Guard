@@ -1,6 +1,6 @@
 # Rust
 target/
-Cargo.lock
+# Cargo.lock is intentionally tracked for binary/contract crates
 
 # Node
 node_modules/

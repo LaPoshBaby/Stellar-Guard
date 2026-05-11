@@ -58,14 +58,27 @@ class FreezeService extends ChangeNotifier {
     required String adminKey,
   }) async {
     try {
-      final res = await http
+      // Step 1: build unsigned XDR
+      final buildRes = await http
           .post(
             Uri.parse('$_base/api/freeze/build'),
             headers: {'Content-Type': 'application/json'},
             body: jsonEncode({'assetCode': assetCode, 'issuer': issuer, 'target': target, 'adminKey': adminKey}),
           )
           .timeout(const Duration(seconds: 15));
-      return res.statusCode == 200;
+      if (buildRes.statusCode != 200) return false;
+
+      final xdr = (jsonDecode(buildRes.body) as Map<String, dynamic>)['xdr'] as String;
+
+      // Step 2: submit (signing via mobile wallet SDK would happen here in production)
+      final submitRes = await http
+          .post(
+            Uri.parse('$_base/api/freeze/submit'),
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode({'signedXdr': xdr, 'assetCode': assetCode, 'issuer': issuer, 'target': target}),
+          )
+          .timeout(const Duration(seconds: 15));
+      return submitRes.statusCode == 200;
     } on Exception {
       return false;
     }

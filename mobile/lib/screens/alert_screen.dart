@@ -101,7 +101,7 @@ class _ProposalCard extends StatelessWidget {
             Chip(label: Text('${proposal.votes}/3 votes')),
           ]),
           const SizedBox(height: 8),
-          Text('Target: ${proposal.target.substring(0, 12)}…', style: const TextStyle(fontFamily: 'monospace', fontSize: 12)),
+          Text('Target: ${proposal.target.length > 12 ? '${proposal.target.substring(0, 12)}…' : proposal.target}', style: const TextStyle(fontFamily: 'monospace', fontSize: 12)),
           const SizedBox(height: 12),
           SizedBox(
             width: double.infinity,
