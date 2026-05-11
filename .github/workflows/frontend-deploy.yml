@@ -40,17 +40,12 @@ jobs:
     needs: build
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-    env:
-      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+    # Don't fail the overall CI if Vercel secrets aren't configured yet
+    continue-on-error: true
     steps:
       - uses: actions/checkout@v4
 
-      - name: Skip if Vercel secrets not configured
-        if: env.VERCEL_TOKEN == ''
-        run: echo "VERCEL_TOKEN not set — skipping deploy" && exit 0
-
       - name: Deploy to Vercel
-        if: env.VERCEL_TOKEN != ''
         uses: amondnet/vercel-action@v25
         with:
           vercel-token: ${{ secrets.VERCEL_TOKEN }}
