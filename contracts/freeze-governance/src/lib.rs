@@ -1,10 +1,7 @@
 //! Stellar-Guard: CAP-0077 Multisig Freeze Governance Contract
 
 #![no_std]
-use soroban_sdk::{
-    contract, contractimpl, contracttype, symbol_short,
-    Address, Env, Symbol, Vec,
-};
+use soroban_sdk::{contract, contractimpl, contracttype, symbol_short, Address, Env, Symbol, Vec};
 
 const QUORUM: u32 = 3;
 const ADMINS_KEY: Symbol = symbol_short!("ADMINS");
@@ -37,7 +34,6 @@ impl FreezeGovernance {
         issuer: Address,
         target: Address,
     ) -> u32 {
-        // Require the caller to have signed this invocation
         caller.require_auth();
 
         let admins: Vec<Address> = env.storage().instance().get(&ADMINS_KEY).unwrap();
@@ -116,7 +112,6 @@ mod tests {
         let asset = symbol_short!("RWAUSD");
 
         env.mock_all_auths();
-        // Each distinct admin votes once — no "already voted" panic
         let v1 = client.vote_freeze(&admin1, &asset, &issuer, &target);
         assert_eq!(v1, 1);
         let v2 = client.vote_freeze(&admin2, &asset, &issuer, &target);
