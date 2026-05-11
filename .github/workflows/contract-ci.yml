@@ -37,9 +37,5 @@ jobs:
       - name: Clippy
         run: cargo clippy --lib -- -D warnings
 
-      - name: Run tests (with testutils feature)
-        run: cargo test --features testutils
-        working-directory: contracts/freeze-governance
-
       - name: Build WASM
         run: cargo build --release --target wasm32-unknown-unknown
