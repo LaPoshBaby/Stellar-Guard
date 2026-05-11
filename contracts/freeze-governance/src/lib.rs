@@ -5,9 +5,7 @@
 //! host function will be invoked here once stabilised on testnet).
 
 #![no_std]
-use soroban_sdk::{
-    contract, contractimpl, contracttype, symbol_short, Address, Env, String, Vec,
-};
+use soroban_sdk::{contract, contractimpl, contracttype, symbol_short, Address, Env, String, Vec};
 
 const QUORUM: u32 = 3;
 /// Proposal TTL: ~7 days at ~5s/ledger = 120_960 ledgers
@@ -54,16 +52,16 @@ impl FreezeGovernance {
 
         let proposal_key = (asset_code.clone(), target.clone());
 
-        let mut proposal: FreezeProposal = env
-            .storage()
-            .temporary()
-            .get(&proposal_key)
-            .unwrap_or(FreezeProposal {
-                asset_code: asset_code.clone(),
-                issuer: issuer.clone(),
-                target: target.clone(),
-                votes: Vec::new(&env),
-            });
+        let mut proposal: FreezeProposal =
+            env.storage()
+                .temporary()
+                .get(&proposal_key)
+                .unwrap_or(FreezeProposal {
+                    asset_code: asset_code.clone(),
+                    issuer: issuer.clone(),
+                    target: target.clone(),
+                    votes: Vec::new(&env),
+                });
 
         if proposal.votes.contains(&caller) {
             panic!("already voted");
@@ -82,9 +80,7 @@ impl FreezeGovernance {
             env.storage().temporary().remove(&proposal_key);
         } else {
             // Extend TTL on every vote so the proposal stays alive
-            env.storage()
-                .temporary()
-                .set(&proposal_key, &proposal);
+            env.storage().temporary().set(&proposal_key, &proposal);
             env.storage()
                 .temporary()
                 .extend_ttl(&proposal_key, PROPOSAL_TTL, PROPOSAL_TTL);
@@ -94,12 +90,7 @@ impl FreezeGovernance {
     }
 
     /// Revoke a previously cast vote.
-    pub fn revoke_vote(
-        env: Env,
-        caller: Address,
-        asset_code: String,
-        target: Address,
-    ) {
+    pub fn revoke_vote(env: Env, caller: Address, asset_code: String, target: Address) {
         caller.require_auth();
 
         let proposal_key = (asset_code, target);
