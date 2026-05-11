@@ -40,16 +40,16 @@ impl FreezeGovernance {
 
         let proposal_key = (asset_code.clone(), target.clone());
 
-        let mut proposal: FreezeProposal = env
-            .storage()
-            .temporary()
-            .get(&proposal_key)
-            .unwrap_or(FreezeProposal {
-                asset_code: asset_code.clone(),
-                issuer: issuer.clone(),
-                target: target.clone(),
-                votes: Vec::new(&env),
-            });
+        let mut proposal: FreezeProposal =
+            env.storage()
+                .temporary()
+                .get(&proposal_key)
+                .unwrap_or(FreezeProposal {
+                    asset_code: asset_code.clone(),
+                    issuer: issuer.clone(),
+                    target: target.clone(),
+                    votes: Vec::new(&env),
+                });
 
         if !admins.contains(&caller) {
             panic!("UnauthorizedFreezeAttempt");
