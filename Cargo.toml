@@ -1,3 +1,23 @@
 [workspace]
 members = ["contracts/freeze-governance"]
 resolver = "2"
+
+# Pin arbitrary to the version required by stellar-xdr 20.x to prevent
+# cargo resolving a newer incompatible version that breaks clippy/build.
+[workspace.dependencies]
+arbitrary = { version = "=1.3.2", features = ["derive"] }
+
+# Release profiles must live at workspace root
+[profile.release]
+opt-level = "z"
+overflow-checks = true
+debug = 0
+strip = "symbols"
+debug-assertions = false
+panic = "abort"
+codegen-units = 1
+lto = true
+
+[profile.release-with-logs]
+inherits = "release"
+debug-assertions = true
