@@ -200,15 +200,22 @@ The `FreezeGovernance` contract implements CAP-0077 multisig governance:
 |----------|---------|--------|
 | `contract-ci.yml` | Push to `contracts/` | Rust fmt, clippy, WASM build |
 | `backend-ci.yml` | Push to `backend/` | TypeScript check + Jest tests |
-| `frontend-deploy.yml` | Push to `main` | Next.js build + lint |
+| `frontend-deploy.yml` | Push to `main` | Next.js build + lint + Vercel deploy |
 
 ### Required GitHub Secrets (for Vercel deploy)
-```
-VERCEL_TOKEN
-VERCEL_ORG_ID
-VERCEL_PROJECT_ID
-NEXT_PUBLIC_API_URL
-```
+
+Add these in **Settings → Secrets and variables → Actions**:
+
+| Secret | How to obtain |
+|--------|---------------|
+| `VERCEL_TOKEN` | Vercel dashboard → Account Settings → Tokens |
+| `VERCEL_ORG_ID` | Vercel dashboard → Team/Personal Settings → General → Team ID |
+| `VERCEL_PROJECT_ID` | Vercel project → Settings → General → Project ID |
+| `NEXT_PUBLIC_API_URL` | Your deployed backend URL, e.g. `https://stellar-guard-api.onrender.com` |
+
+### Live URL
+
+> **Frontend:** https://stellar-guard.vercel.app *(update after first deploy)*
 
 ---
 

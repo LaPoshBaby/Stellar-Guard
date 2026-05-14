@@ -2,6 +2,7 @@ import { Router, Request, Response } from "express";
 import StellarSdk from "@stellar/stellar-sdk";
 import { recordVote, clearVotes, listProposals } from "../services/voteStore";
 import { getOnChainVotes } from "../services/sorobanRpc";
+import { sendFreezeProposalNotification } from "../services/fcmService";
 
 export const freezeRouter = Router();
 
@@ -95,7 +96,12 @@ freezeRouter.post("/submit", async (req: Request, res: Response) => {
     );
 
     // Record in audit log regardless of quorum state
-    recordVote(assetCode, issuer, target, adminKey);
+    const auditCount = recordVote(assetCode, issuer, target, adminKey);
+
+    // Send FCM push notification on the first vote for a new proposal
+    if (auditCount === 1) {
+      sendFreezeProposalNotification(assetCode, target).catch(() => {/* non-fatal */});
+    }
 
     // Read authoritative vote count from chain
     const onChainVotes = await getOnChainVotes(assetCode, issuer, target);

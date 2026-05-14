@@ -23,6 +23,7 @@ class StellarGuardApp extends StatelessWidget {
     return MaterialApp(
       title: 'Stellar-Guard',
       debugShowCheckedModeBanner: false,
+      navigatorKey: NotificationService.navigatorKey,
       theme: ThemeData(
         colorScheme: ColorScheme.dark(
           primary: const Color(0xFF7C3AED),
