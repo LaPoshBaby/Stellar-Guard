@@ -234,6 +234,86 @@ NEXT_PUBLIC_API_URL
 
 ---
 
+## Mainnet Deployment
+
+> ⚠️ **Wait for CAP-0077 (`freeze_entry`) to be available on mainnet before deploying.** The governance layer is production-ready; the final trustline-restriction step is not yet live at the protocol level.
+
+### Environment differences: testnet → mainnet
+
+| Variable | Testnet | Mainnet |
+|----------|---------|---------|
+| `HORIZON_URL` | `https://horizon-testnet.stellar.org` | `https://horizon.stellar.org` |
+| `SOROBAN_RPC_URL` | `https://soroban-testnet.stellar.org` | `https://soroban-rpc.stellar.org` |
+| `NETWORK_PASSPHRASE` | `Test SDF Network ; September 2015` | `Public Global Stellar Network ; September 2015` |
+| `FREEZE_CONTRACT_ID` | testnet contract ID | new mainnet contract ID (re-deploy required) |
+
+### Steps
+
+#### 1. Fund mainnet admin accounts
+
+Use real XLM. Each admin account needs a minimum balance to cover transaction fees and contract storage rent.
+
+```bash
+# Generate keys (or import existing ones)
+stellar keys generate admin1 --network mainnet
+stellar keys generate admin2 --network mainnet
+stellar keys generate admin3 --network mainnet
+```
+
+#### 2. Build and deploy the contract to mainnet
+
+```bash
+cd contracts/freeze-governance
+
+cargo build --release --target wasm32-unknown-unknown
+stellar contract optimize \
+  --wasm target/wasm32-unknown-unknown/release/stellar_guard_contract.wasm
+
+CONTRACT_ID=$(stellar contract deploy \
+  --wasm target/wasm32-unknown-unknown/release/stellar_guard_contract.optimized.wasm \
+  --source admin1 \
+  --network mainnet)
+
+echo "CONTRACT_ID=$CONTRACT_ID"
+```
+
+#### 3. Initialize with mainnet admin addresses
+
+```bash
+ADMIN1=$(stellar keys address admin1)
+ADMIN2=$(stellar keys address admin2)
+ADMIN3=$(stellar keys address admin3)
+
+stellar contract invoke \
+  --id "$CONTRACT_ID" --source admin1 --network mainnet \
+  -- init --admins "[\"$ADMIN1\",\"$ADMIN2\",\"$ADMIN3\"]"
+```
+
+#### 4. Update backend `.env`
+
+```bash
+HORIZON_URL=https://horizon.stellar.org
+SOROBAN_RPC_URL=https://soroban-rpc.stellar.org
+NETWORK_PASSPHRASE=Public Global Stellar Network ; September 2015
+FREEZE_CONTRACT_ID=<your-mainnet-contract-id>
+```
+
+#### 5. Swap in `freeze_entry` (when CAP-0077 is live)
+
+In `contracts/freeze-governance/src/lib.rs`, replace the event emission with the one-line host function call:
+
+```rust
+// Remove this (current testnet-compatible implementation):
+env.events().publish((symbol_short!("FREEZE"), asset_code, issuer, target), vote_count);
+
+// Add this (mainnet — requires CAP-0077 freeze_entry to be available):
+env.freeze_entry(issuer, target, asset_code);
+```
+
+Then rebuild, re-deploy, and re-initialize the contract.
+
+---
+
 ## License
 
 MIT
