@@ -1,0 +1,35 @@
+services:
+  backend:
+    build: ./backend
+    ports:
+      - "4000:4000"
+    environment:
+      # Required: deploy your Soroban contract and paste the ID here
+      FREEZE_CONTRACT_ID: ${FREEZE_CONTRACT_ID:-}
+      # Stellar network endpoints (defaults to testnet)
+      HORIZON_URL: ${HORIZON_URL:-https://horizon-testnet.stellar.org}
+      SOROBAN_RPC_URL: ${SOROBAN_RPC_URL:-https://soroban-testnet.stellar.org}
+      NETWORK_PASSPHRASE: ${NETWORK_PASSPHRASE:-Test SDF Network ; September 2015}
+      # CORS — must match the frontend origin
+      ALLOWED_ORIGIN: ${ALLOWED_ORIGIN:-http://localhost:3000}
+      # SQLite audit log path inside the container
+      DB_PATH: /data/votes.db
+      # Optional: FCM server key for push notifications
+      FCM_SERVER_KEY: ${FCM_SERVER_KEY:-}
+      FCM_TOPIC: ${FCM_TOPIC:-freeze_alerts}
+    volumes:
+      - backend_data:/data
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        # Must point to the backend as seen from the browser (not the container network)
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:4000}
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+
+volumes:
+  backend_data:
