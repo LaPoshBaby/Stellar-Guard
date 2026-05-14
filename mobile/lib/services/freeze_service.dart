@@ -34,24 +34,42 @@ class FreezeService extends ChangeNotifier {
     loading = true;
     error = null;
     notifyListeners();
-    try {
-      final res = await http
-          .get(Uri.parse('$_base/api/freeze/proposals'))
-          .timeout(const Duration(seconds: 10));
-      if (res.statusCode == 200) {
-        final list = jsonDecode(res.body) as List;
-        proposals = list
-            .map((e) => FreezeProposal.fromJson(e as Map<String, dynamic>))
-            .toList();
-      } else {
-        error = 'Server error ${res.statusCode}';
+
+    const delays = [1, 2, 4]; // seconds between retries
+    Exception? lastError;
+
+    for (var attempt = 0; attempt <= delays.length; attempt++) {
+      try {
+        final res = await http
+            .get(Uri.parse('$_base/api/freeze/proposals'))
+            .timeout(const Duration(seconds: 10));
+        if (res.statusCode == 200) {
+          final list = jsonDecode(res.body) as List;
+          proposals = list
+              .map((e) => FreezeProposal.fromJson(e as Map<String, dynamic>))
+              .toList();
+          lastError = null;
+          break; // success
+        } else {
+          error = 'Server error ${res.statusCode}';
+          break; // non-retryable HTTP error
+        }
+      } on Exception catch (e) {
+        lastError = e;
+        if (attempt < delays.length) {
+          await Future.delayed(Duration(seconds: delays[attempt]));
+        }
       }
-    } on Exception catch (e) {
-      error = e.toString().contains('TimeoutException') ? 'NetworkTimeout' : e.toString();
-    } finally {
-      loading = false;
-      notifyListeners();
     }
+
+    if (lastError != null) {
+      error = lastError.toString().contains('TimeoutException')
+          ? 'NetworkTimeout'
+          : lastError.toString();
+    }
+
+    loading = false;
+    notifyListeners();
   }
 
   /// Build unsigned XDR from backend. The caller MUST sign this XDR

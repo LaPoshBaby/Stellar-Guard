@@ -82,6 +82,25 @@ Everything else in the stack — dashboard, Horizon monitor, Freighter signing, 
 
 ## Quick Start
 
+### Docker Quick-Start (backend + frontend)
+
+> Requires [Docker](https://docs.docker.com/get-docker/) and Docker Compose v2.
+
+```bash
+# 1. Copy and fill in your contract ID (all other vars have testnet defaults)
+cp backend/.env.example .env
+# Edit .env — set FREEZE_CONTRACT_ID at minimum
+
+# 2. Start backend (:4000) and frontend (:3000)
+docker compose up --build
+
+# Open http://localhost:3000
+```
+
+To stop: `docker compose down`
+
+---
+
 ### Prerequisites
 - Node.js 20+
 - Rust + `wasm32-unknown-unknown` target
