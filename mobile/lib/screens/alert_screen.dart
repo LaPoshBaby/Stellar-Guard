@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:provider/provider.dart';
-import 'package:stellar_flutter_sdk/stellar_flutter_sdk.dart' as stellar;
 import '../services/freeze_service.dart';
+import '../services/xdr_signer.dart';
+import 'proposal_detail_screen.dart';
 
 class AlertScreen extends StatefulWidget {
   const AlertScreen({super.key});
@@ -54,8 +55,9 @@ class _AlertScreenState extends State<AlertScreen> {
     );
     if (xdr == null) { _showSnack('Failed to build transaction'); return; }
 
-    // 4. Sign with stellar_flutter_sdk
-    final signedXdr = _signXdr(xdr, adminSecretKey);
+    // 4. Sign via pluggable signer (in-app key path retained for demo/testnet)
+    final XdrSigner signer = InAppKeySigner(adminSecretKey);
+    final signedXdr = await signer.sign(xdr);
     if (signedXdr == null) { _showSnack('Failed to sign transaction'); return; }
 
     // 5. Submit signed XDR
@@ -68,18 +70,6 @@ class _AlertScreenState extends State<AlertScreen> {
 
     _showSnack(result.ok ? '✅ Vote submitted' : '❌ ${result.error}');
     if (result.ok) svc.fetchProposals();
-  }
-
-  /// Sign an XDR envelope with the admin's secret key using stellar_flutter_sdk.
-  String? _signXdr(String unsignedXdr, String secretKey) {
-    try {
-      final kp = stellar.KeyPair.fromSecretSeed(secretKey);
-      final tx = stellar.AbstractTransaction.fromEnvelopeXdrString(unsignedXdr);
-      tx.sign(kp, stellar.Network.TESTNET);
-      return tx.toEnvelopeXdrBase64();
-    } catch (_) {
-      return null;
-    }
   }
 
   void _showSnack(String msg) {
@@ -127,31 +117,46 @@ class _ProposalCard extends StatelessWidget {
         : proposal.target;
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Row(children: [
-            const Icon(Icons.lock_outline, color: Color(0xFFDC2626)),
-            const SizedBox(width: 8),
-            Text(proposal.assetCode,
-                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            const Spacer(),
-            Chip(label: Text('${proposal.votes}/3 votes')),
-          ]),
-          const SizedBox(height: 8),
-          Text('Target: $shortTarget',
-              style: const TextStyle(fontFamily: 'monospace', fontSize: 12)),
-          const SizedBox(height: 12),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton.icon(
-              onPressed: onApprove,
-              icon: const Icon(Icons.fingerprint),
-              label: const Text('Approve with Biometrics'),
-              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF7C3AED)),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: () => Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => ProposalDetailScreen(
+              proposal: proposal,
+              onApprove: onApprove,
             ),
           ),
-        ]),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Row(children: [
+              const Icon(Icons.lock_outline, color: Color(0xFFDC2626)),
+              const SizedBox(width: 8),
+              Text(proposal.assetCode,
+                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              const Spacer(),
+              Chip(label: Text('${proposal.votes}/3 votes')),
+            ]),
+            const SizedBox(height: 8),
+            Text('Target: $shortTarget',
+                style: const TextStyle(fontFamily: 'monospace', fontSize: 12)),
+            const SizedBox(height: 4),
+            const Text('Tap for full details →',
+                style: TextStyle(fontSize: 11, color: Colors.grey)),
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: onApprove,
+                icon: const Icon(Icons.fingerprint),
+                label: const Text('Approve with Biometrics'),
+                style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF7C3AED)),
+              ),
+            ),
+          ]),
+        ),
       ),
     );
   }
