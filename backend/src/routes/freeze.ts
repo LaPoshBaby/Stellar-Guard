@@ -69,7 +69,8 @@ freezeRouter.post("/build", async (req: Request, res: Response) => {
       .setTimeout(30)
       .build();
     return res.json({ xdr: tx.toXDR() });
-  } catch (e: any) {
+  } catch (err) {
+    const e = err as { message?: string; code?: string };
     if (e.message?.includes("timeout") || e.code === "ECONNREFUSED")
       return res.status(504).json({ error: "NetworkTimeout: Horizon unreachable" });
     return res.status(500).json({ error: e.message });
@@ -114,7 +115,8 @@ freezeRouter.post("/submit", async (req: Request, res: Response) => {
     }
 
     return res.json({ status: "vote_recorded", votes, quorum: QUORUM, hash: result.hash });
-  } catch (e: any) {
+  } catch (err) {
+    const e = err as { response?: { data?: { extras?: { result_codes?: { transaction?: string } } } }; message?: string };
     if (e.response?.data?.extras?.result_codes?.transaction === "tx_bad_auth")
       return res.status(403).json({ error: "UnauthorizedFreezeAttempt" });
     return res.status(500).json({ error: e.message });

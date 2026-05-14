@@ -15,7 +15,8 @@ export function WalletConnect({ onConnect }: Props) {
       const pk = await getPublicKey();
       setKey(pk);
       onConnect(pk);
-    } catch (e: any) {
+    } catch (err) {
+      const e = err as { message?: string };
       setError(e.message ?? "Wallet connection failed");
     }
   }

@@ -36,11 +36,10 @@ class _AlertScreenState extends State<AlertScreen> {
     );
     if (!authenticated) return;
 
-    // 2. Load admin keys from secure storage
+    // 2. Load admin public key only — secret key is never stored in the app
     final adminPublicKey = await _storage.read(key: 'admin_public_key');
-    final adminSecretKey = await _storage.read(key: 'admin_secret_key');
-    if (adminPublicKey == null || adminSecretKey == null) {
-      _showSnack('Admin keys not configured. Store admin_public_key and admin_secret_key.');
+    if (adminPublicKey == null) {
+      _showSnack('Admin public key not configured. Store admin_public_key in secure storage.');
       return;
     }
 
@@ -55,10 +54,10 @@ class _AlertScreenState extends State<AlertScreen> {
     );
     if (xdr == null) { _showSnack('Failed to build transaction'); return; }
 
-    // 4. Sign via pluggable signer (in-app key path retained for demo/testnet)
-    final XdrSigner signer = InAppKeySigner(adminSecretKey);
+    // 4. Sign via WalletConnect — the secret key never touches the app
+    const XdrSigner signer = WalletConnectSigner();
     final signedXdr = await signer.sign(xdr);
-    if (signedXdr == null) { _showSnack('Failed to sign transaction'); return; }
+    if (signedXdr == null) { _showSnack('Signing cancelled or failed'); return; }
 
     // 5. Submit signed XDR
     final result = await svc.submitSignedVote(

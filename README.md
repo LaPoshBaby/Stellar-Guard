@@ -68,14 +68,13 @@ Everything else in the stack — dashboard, Horizon monitor, Freighter signing, 
 
 ### Mobile Approval Flow
 
-1. Store admin keys in Flutter secure storage:
+1. Store your admin public key in Flutter secure storage:
    ```dart
    await storage.write(key: 'admin_public_key', value: 'G...');
-   await storage.write(key: 'admin_secret_key', value: 'S...');
    ```
 2. Open the app — pending proposals appear automatically
 3. Tap **Approve with Biometrics** — fingerprint/face ID gates the signing
-4. `stellar_flutter_sdk` signs the XDR with the stored key
+4. The app builds an unsigned XDR from the backend and sends it to WalletConnect for signing — the secret key never touches the app
 5. Signed transaction is submitted to the network
 
 ---

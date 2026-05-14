@@ -31,7 +31,8 @@ export function FreezePanel({ adminKey, onError }: Props) {
       const result = await axios.post(`${API}/api/freeze/submit`, { signedXdr: signed, assetCode, issuer, target });
       setVotes(result.data.votes);
       setStatus("success");
-    } catch (e: any) {
+    } catch (err) {
+      const e = err as { response?: { data?: { error?: string } }; message?: string };
       const msg = e.response?.data?.error ?? e.message ?? "Unknown error";
       if (msg.includes("ContractNotFound")) onError("Contract not deployed on testnet");
       else if (msg.includes("Unauthorized")) onError("UnauthorizedFreezeAttempt: not an admin");
