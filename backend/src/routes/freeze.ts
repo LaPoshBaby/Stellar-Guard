@@ -20,6 +20,8 @@ function isValidAssetCode(code: string): boolean {
   return /^[A-Z0-9]{1,12}$/.test(code);
 }
 
+const TTL_SECONDS = 7 * 24 * 60 * 60; // 7-day proposal TTL
+
 // GET /api/freeze/proposals — vote counts are read from chain when available
 freezeRouter.get("/proposals", async (_req: Request, res: Response) => {
   const rows = listProposals();
@@ -30,9 +32,9 @@ freezeRouter.get("/proposals", async (_req: Request, res: Response) => {
         assetCode: b.assetCode,
         issuer: b.issuer,
         target: b.target,
-        // Prefer on-chain count; fall back to audit log count if RPC unavailable
         votes: onChain ?? b.voters.length,
         source: onChain !== null ? "chain" : "local",
+        expiresAt: new Date((b.createdAt + TTL_SECONDS) * 1000).toISOString(),
       };
     })
   );
