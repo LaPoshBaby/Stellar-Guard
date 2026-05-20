@@ -35,6 +35,7 @@ class WalletConnectSigner implements XdrSigner {
   Future<String?> sign(String unsignedXdr) async {
     // TODO: initiate a WalletConnect session request to sign [unsignedXdr]
     // and return the signed XDR envelope returned by the wallet.
-    throw UnimplementedError('WalletConnect signing is not yet implemented');
+    // Returns null until WalletConnect integration is complete.
+    return null;
   }
 }

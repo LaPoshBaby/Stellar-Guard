@@ -43,7 +43,7 @@ test("shows success after successful vote", async () => {
   mockPost
     .mockResolvedValueOnce({ data: { xdr: "unsigned_xdr" } })
     .mockResolvedValueOnce({ data: { votes: 2 } });
-  mockSign.mockResolvedValue("signed_xdr");
+  mockSign.mockResolvedValue({ signedTransaction: "signed_xdr", error: null });
 
   render(<FreezePanel adminKey={VALID_KEY} onError={jest.fn()} />);
   fireEvent.change(screen.getByPlaceholderText(/Asset Code/i), { target: { value: "RWAUSD" } });

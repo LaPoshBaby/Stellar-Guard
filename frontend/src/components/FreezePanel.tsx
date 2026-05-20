@@ -27,8 +27,9 @@ export function FreezePanel({ adminKey, onError }: Props) {
     setStatus("pending");
     try {
       const { data } = await axios.post(`${API}/api/freeze/build`, { assetCode, issuer, target, adminKey });
-      const signed = await signTransaction(data.xdr, { network: "TESTNET" });
-      const result = await axios.post(`${API}/api/freeze/submit`, { signedXdr: signed, assetCode, issuer, target });
+      const { signedTransaction, error: signError } = await signTransaction(data.xdr, { network: "TESTNET" });
+      if (signError) throw new Error(signError);
+      const result = await axios.post(`${API}/api/freeze/submit`, { signedXdr: signedTransaction, assetCode, issuer, target });
       setVotes(result.data.votes);
       setStatus("success");
     } catch (err) {
