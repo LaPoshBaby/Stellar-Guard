@@ -108,6 +108,9 @@ impl FreezeGovernance {
 
         proposal.votes.remove(idx as u32);
         env.storage().temporary().set(&proposal_key, &proposal);
+        env.storage()
+            .temporary()
+            .extend_ttl(&proposal_key, PROPOSAL_TTL, PROPOSAL_TTL);
     }
 
     /// Return current vote count for a proposal (0 if none or expired).

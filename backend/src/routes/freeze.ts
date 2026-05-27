@@ -8,6 +8,7 @@ export const freezeRouter = Router();
 
 const HORIZON_URL = process.env.HORIZON_URL ?? "https://horizon-testnet.stellar.org";
 const CONTRACT_ID = process.env.FREEZE_CONTRACT_ID ?? "";
+const NETWORK_PASSPHRASE = process.env.NETWORK_PASSPHRASE ?? StellarSdk.Networks.TESTNET;
 const server = new StellarSdk.Horizon.Server(HORIZON_URL);
 const QUORUM = 3;
 
@@ -19,19 +20,21 @@ function isValidAssetCode(code: string): boolean {
   return /^[A-Z0-9]{1,12}$/.test(code);
 }
 
+const TTL_SECONDS = 7 * 24 * 60 * 60; // 7-day proposal TTL
+
 // GET /api/freeze/proposals — vote counts are read from chain when available
 freezeRouter.get("/proposals", async (_req: Request, res: Response) => {
   const rows = listProposals();
   const proposals = await Promise.all(
     rows.map(async (b) => {
-      const onChain = await getOnChainVotes(b.assetCode, b.issuer, b.target);
+      const onChain = await getOnChainVotes(b.assetCode, b.target);
       return {
         assetCode: b.assetCode,
         issuer: b.issuer,
         target: b.target,
-        // Prefer on-chain count; fall back to audit log count if RPC unavailable
         votes: onChain ?? b.voters.length,
         source: onChain !== null ? "chain" : "local",
+        expiresAt: new Date((b.createdAt + TTL_SECONDS) * 1000).toISOString(),
       };
     })
   );
@@ -55,7 +58,7 @@ freezeRouter.post("/build", async (req: Request, res: Response) => {
     const contract = new StellarSdk.Contract(CONTRACT_ID);
     const tx = new StellarSdk.TransactionBuilder(account, {
       fee: "100000",
-      networkPassphrase: StellarSdk.Networks.TESTNET,
+      networkPassphrase: NETWORK_PASSPHRASE,
     })
       .addOperation(
         contract.call(
@@ -86,15 +89,13 @@ freezeRouter.post("/submit", async (req: Request, res: Response) => {
     return res.status(400).json({ error: "Invalid asset code or address" });
 
   try {
-    const tx = StellarSdk.TransactionBuilder.fromXDR(signedXdr, StellarSdk.Networks.TESTNET);
+    const tx = StellarSdk.TransactionBuilder.fromXDR(signedXdr, NETWORK_PASSPHRASE);
     const adminKey = tx.source;
     if (!isValidAddress(adminKey))
       return res.status(400).json({ error: "Invalid transaction source" });
 
     // Submit to network first — the contract enforces all auth/quorum rules
-    const result = await server.submitTransaction(
-      StellarSdk.TransactionBuilder.fromXDR(signedXdr, StellarSdk.Networks.TESTNET) as any
-    );
+    const result = await server.submitTransaction(tx as any);
 
     // Record in audit log regardless of quorum state
     const auditCount = recordVote(assetCode, issuer, target, adminKey);
@@ -105,7 +106,7 @@ freezeRouter.post("/submit", async (req: Request, res: Response) => {
     }
 
     // Read authoritative vote count from chain
-    const onChainVotes = await getOnChainVotes(assetCode, issuer, target);
+    const onChainVotes = await getOnChainVotes(assetCode, target);
     const votes = onChainVotes ?? 0;
 
     if (votes === 0) {

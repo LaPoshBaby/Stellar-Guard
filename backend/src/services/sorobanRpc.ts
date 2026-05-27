@@ -12,7 +12,6 @@ const NETWORK_PASSPHRASE =
  */
 export async function getOnChainVotes(
   assetCode: string,
-  issuer: string,
   target: string
 ): Promise<number | null> {
   if (!CONTRACT_ID) return null;
