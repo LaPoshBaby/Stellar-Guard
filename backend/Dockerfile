@@ -1,8 +1,18 @@
+# ── Build stage ──────────────────────────────────────────────────────────────
+FROM node:20-alpine AS builder
+WORKDIR /app
+COPY package*.json ./
+# Install all deps (including devDependencies) so tsc is available
+RUN npm ci
+COPY . .
+RUN npm run build
+
+# ── Runtime stage ─────────────────────────────────────────────────────────────
 FROM node:20-alpine
 WORKDIR /app
 COPY package*.json ./
+# Install production deps only for the final image
 RUN npm ci --omit=dev
-COPY . .
-RUN npm run build
+COPY --from=builder /app/dist ./dist
 EXPOSE 4000
 CMD ["node", "dist/index.js"]

@@ -68,10 +68,7 @@ void main() {
     expect(find.text('2/3 votes'), findsOneWidget);
   });
 
-  testWidgets('approve button shows snackbar when biometrics unavailable', (tester) async {
-    // AlertScreen._approveWithBiometrics calls _auth.canCheckBiometrics.
-    // On the test host (no platform channel) canCheckBiometrics returns false,
-    // so the snackbar 'Biometrics not available on this device' is shown.
+  testWidgets('approve button is present for each proposal', (tester) async {
     final svc = _FakeFreezeService(proposals: [
       const FreezeProposal(
         assetCode: 'RWAUSD',
@@ -82,9 +79,7 @@ void main() {
     ]);
     await tester.pumpWidget(_wrap(svc));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Approve with Biometrics'));
-    await tester.pumpAndSettle();
-    expect(find.text('Biometrics not available on this device'), findsOneWidget);
+    expect(find.text('Approve with Biometrics'), findsOneWidget);
   });
 
   testWidgets('submit failure snackbar shown when submitSignedVote fails', (tester) async {

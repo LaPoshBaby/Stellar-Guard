@@ -22,7 +22,7 @@ export function WalletConnect({ onConnect }: Props) {
   }
 
   if (key) return (
-    <div className="bg-stellar-card border border-stellar-accent rounded px-3 py-1 text-xs font-mono text-stellar-accent">
+    <div className="bg-gray-100 dark:bg-stellar-card border border-stellar-accent rounded px-3 py-1 text-xs font-mono text-stellar-accent">
       {key.slice(0, 6)}…{key.slice(-4)}
     </div>
   );

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:provider/provider.dart';
@@ -27,14 +28,19 @@ class _AlertScreenState extends State<AlertScreen> {
 
   Future<void> _approveWithBiometrics(FreezeProposal p) async {
     // 1. Biometric gate
-    final canAuth = await _auth.canCheckBiometrics;
-    if (!canAuth) { _showSnack('Biometrics not available on this device'); return; }
+    try {
+      final canAuth = await _auth.canCheckBiometrics;
+      if (!canAuth) { _showSnack('Biometrics not available on this device'); return; }
 
-    final authenticated = await _auth.authenticate(
-      localizedReason: 'Authenticate to approve freeze of ${p.assetCode}',
-      options: const AuthenticationOptions(biometricOnly: true),
-    );
-    if (!authenticated) return;
+      final authenticated = await _auth.authenticate(
+        localizedReason: 'Authenticate to approve freeze of ${p.assetCode}',
+        options: const AuthenticationOptions(biometricOnly: true),
+      );
+      if (!authenticated) return;
+    } on PlatformException {
+      _showSnack('Biometrics not available on this device');
+      return;
+    }
 
     // 2. Load admin public key only — secret key is never stored in the app
     final adminPublicKey = await _storage.read(key: 'admin_public_key');
@@ -54,9 +60,8 @@ class _AlertScreenState extends State<AlertScreen> {
     );
     if (xdr == null) { _showSnack('Failed to build transaction'); return; }
 
-    // 4. Sign via WalletConnect — the secret key never touches the app
-    const XdrSigner signer = WalletConnectSigner();
-    final signedXdr = await signer.sign(xdr);
+    // 4. Sign via pluggable signer — the secret key never touches the app
+    final signedXdr = await _signXdr(xdr, const WalletConnectSigner());
     if (signedXdr == null) { _showSnack('Signing cancelled or failed'); return; }
 
     // 5. Submit signed XDR
@@ -74,6 +79,11 @@ class _AlertScreenState extends State<AlertScreen> {
   void _showSnack(String msg) {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
   }
+
+  /// Signs [unsignedXdr] using the provided [signer].
+  /// Extracted so callers can inject any [XdrSigner] implementation.
+  Future<String?> _signXdr(String unsignedXdr, XdrSigner signer) =>
+      signer.sign(unsignedXdr);
 
   @override
   Widget build(BuildContext context) {

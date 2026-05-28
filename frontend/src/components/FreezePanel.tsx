@@ -81,20 +81,20 @@ export function FreezePanel({ adminKey, onError }: Props) {
   const now = new Date();
 
   return (
-    <div className="bg-stellar-card rounded-xl p-4 space-y-4">
+    <div className="bg-gray-100 dark:bg-stellar-card rounded-xl p-4 space-y-4">
       <h2 className="font-semibold text-lg">🔒 Freeze Governance</h2>
-      <p className="text-xs text-gray-400">Sign as Admin to vote for a Quorum Freeze (CAP-0077)</p>
+      <p className="text-xs text-gray-500 dark:text-gray-400">Sign as Admin to vote for a Quorum Freeze (CAP-0077)</p>
 
       <input value={assetCode} onChange={(e) => setAssetCode(e.target.value.toUpperCase())}
         placeholder="Asset Code (e.g. RWAUSD, max 12 chars)"
         maxLength={12}
-        className="w-full bg-gray-800 rounded px-3 py-2 text-sm" />
+        className="w-full bg-white dark:bg-gray-800 border border-gray-300 dark:border-transparent rounded px-3 py-2 text-sm" />
       <input value={issuer} onChange={(e) => setIssuer(e.target.value)}
         placeholder="Issuer Account (G...)"
-        className="w-full bg-gray-800 rounded px-3 py-2 text-sm font-mono" />
+        className="w-full bg-white dark:bg-gray-800 border border-gray-300 dark:border-transparent rounded px-3 py-2 text-sm font-mono" />
       <input value={target} onChange={(e) => setTarget(e.target.value)}
         placeholder="Target Account to Freeze (G...)"
-        className="w-full bg-gray-800 rounded px-3 py-2 text-sm font-mono" />
+        className="w-full bg-white dark:bg-gray-800 border border-gray-300 dark:border-transparent rounded px-3 py-2 text-sm font-mono" />
 
       <button onClick={submitVote} disabled={status === "pending" || !adminKey}
         className="w-full bg-stellar-danger hover:opacity-90 disabled:opacity-40 text-white py-2 rounded font-semibold text-sm">
@@ -106,22 +106,22 @@ export function FreezePanel({ adminKey, onError }: Props) {
       )}
 
       {proposals.length > 0 && (
-        <div className="space-y-2 pt-2 border-t border-gray-700">
-          <p className="text-xs text-gray-400 font-semibold">Active Proposals</p>
+        <div className="space-y-2 pt-2 border-t border-gray-300 dark:border-gray-700">
+          <p className="text-xs text-gray-500 dark:text-gray-400 font-semibold">Active Proposals</p>
           {proposals.map((p) => {
             const countdown = formatCountdown(p.expiresAt, now);
             const expiringSoon = new Date(p.expiresAt).getTime() - now.getTime() < 24 * 60 * 60 * 1000;
             return (
               <div key={`${p.assetCode}:${p.target}`}
-                className={`rounded-lg px-3 py-2 text-xs space-y-1 ${expiringSoon ? "bg-stellar-danger/20 border border-stellar-danger" : "bg-gray-800"}`}>
+                className={`rounded-lg px-3 py-2 text-xs space-y-1 ${expiringSoon ? "bg-stellar-danger/20 border border-stellar-danger" : "bg-white dark:bg-gray-800"}`}>
                 <div className="flex justify-between items-center">
                   <span className="font-semibold">{p.assetCode}</span>
-                  <span className={expiringSoon ? "text-stellar-danger font-semibold" : "text-gray-400"}>
+                  <span className={expiringSoon ? "text-stellar-danger font-semibold" : "text-gray-500 dark:text-gray-400"}>
                     ⏱ {countdown}
                   </span>
                 </div>
-                <div className="text-gray-400 font-mono truncate">{p.target}</div>
-                <div className="text-gray-500">{p.votes}/3 votes</div>
+                <div className="text-gray-500 dark:text-gray-400 font-mono truncate">{p.target}</div>
+                <div className="text-gray-400 dark:text-gray-500">{p.votes}/3 votes</div>
               </div>
             );
           })}
