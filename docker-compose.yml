@@ -19,6 +19,12 @@ services:
       FCM_TOPIC: ${FCM_TOPIC:-freeze_alerts}
     volumes:
       - backend_data:/data
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:4000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
 
   frontend:
     build:
@@ -29,7 +35,8 @@ services:
     ports:
       - "3000:3000"
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
 
 volumes:
   backend_data:
