@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:local_auth/local_auth.dart';
 import 'package:provider/provider.dart';
@@ -27,14 +28,19 @@ class _AlertScreenState extends State<AlertScreen> {
 
   Future<void> _approveWithBiometrics(FreezeProposal p) async {
     // 1. Biometric gate
-    final canAuth = await _auth.canCheckBiometrics;
-    if (!canAuth) { _showSnack('Biometrics not available on this device'); return; }
+    try {
+      final canAuth = await _auth.canCheckBiometrics;
+      if (!canAuth) { _showSnack('Biometrics not available on this device'); return; }
 
-    final authenticated = await _auth.authenticate(
-      localizedReason: 'Authenticate to approve freeze of ${p.assetCode}',
-      options: const AuthenticationOptions(biometricOnly: true),
-    );
-    if (!authenticated) return;
+      final authenticated = await _auth.authenticate(
+        localizedReason: 'Authenticate to approve freeze of ${p.assetCode}',
+        options: const AuthenticationOptions(biometricOnly: true),
+      );
+      if (!authenticated) return;
+    } on PlatformException {
+      _showSnack('Biometrics not available on this device');
+      return;
+    }
 
     // 2. Load admin public key only — secret key is never stored in the app
     final adminPublicKey = await _storage.read(key: 'admin_public_key');
