@@ -54,9 +54,8 @@ class _AlertScreenState extends State<AlertScreen> {
     );
     if (xdr == null) { _showSnack('Failed to build transaction'); return; }
 
-    // 4. Sign via WalletConnect — the secret key never touches the app
-    const XdrSigner signer = WalletConnectSigner();
-    final signedXdr = await signer.sign(xdr);
+    // 4. Sign via pluggable signer — the secret key never touches the app
+    final signedXdr = await _signXdr(xdr, const WalletConnectSigner());
     if (signedXdr == null) { _showSnack('Signing cancelled or failed'); return; }
 
     // 5. Submit signed XDR
@@ -74,6 +73,11 @@ class _AlertScreenState extends State<AlertScreen> {
   void _showSnack(String msg) {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
   }
+
+  /// Signs [unsignedXdr] using the provided [signer].
+  /// Extracted so callers can inject any [XdrSigner] implementation.
+  Future<String?> _signXdr(String unsignedXdr, XdrSigner signer) =>
+      signer.sign(unsignedXdr);
 
   @override
   Widget build(BuildContext context) {
