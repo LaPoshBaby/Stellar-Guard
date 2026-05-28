@@ -52,9 +52,9 @@ export function LedgerExplorer({ onSuspicious }: Props) {
   const chartData = transfers.slice(-20).map((t) => ({ ts: t.ts.slice(11, 16), amount: t.amount }));
 
   return (
-    <div className="bg-stellar-card rounded-xl p-4 space-y-4">
+    <div className="bg-gray-100 dark:bg-stellar-card rounded-xl p-4 space-y-4">
       <h2 className="font-semibold text-lg">📡 Live Ledger Explorer</h2>
-      {loading ? <p className="text-gray-400 text-sm">Loading…</p> : (
+      {loading ? <p className="text-gray-500 dark:text-gray-400 text-sm">Loading…</p> : (
         <>
           <ResponsiveContainer width="100%" height={160}>
             <LineChart data={chartData}>
@@ -66,7 +66,7 @@ export function LedgerExplorer({ onSuspicious }: Props) {
           </ResponsiveContainer>
           <div className="overflow-auto max-h-64">
             <table className="w-full text-xs">
-              <thead><tr className="text-gray-400 border-b border-gray-700">
+              <thead><tr className="text-gray-500 dark:text-gray-400 border-b border-gray-300 dark:border-gray-700">
                 <th className="text-left py-1">Asset</th>
                 <th className="text-left py-1">From</th>
                 <th className="text-left py-1">To</th>
@@ -75,7 +75,7 @@ export function LedgerExplorer({ onSuspicious }: Props) {
               <tbody>
                 {transfers.map((t) => (
                   <tr key={t.id}
-                    className={`border-b border-gray-800 ${t.amount >= threshold(t.asset) ? "text-stellar-danger" : ""}`}>
+                    className={`border-b border-gray-200 dark:border-gray-800 ${t.amount >= threshold(t.asset) ? "text-stellar-danger" : ""}`}>
                     <td className="py-1">{t.asset}</td>
                     <td className="py-1 font-mono">{t.from.slice(0, 8)}…</td>
                     <td className="py-1 font-mono">{t.to.slice(0, 8)}…</td>
