@@ -4,6 +4,7 @@ import { WalletConnect } from "@/components/WalletConnect";
 import { LedgerExplorer } from "@/components/LedgerExplorer";
 import { FreezePanel } from "@/components/FreezePanel";
 import { AlertBanner } from "@/components/AlertBanner";
+import { NetworkBadge } from "@/components/NetworkBadge";
 
 export default function CommandCenter() {
   const [publicKey, setPublicKey] = useState<string | null>(null);
@@ -16,7 +17,10 @@ export default function CommandCenter() {
           <h1 className="text-2xl font-bold text-stellar-accent">⚡ Stellar-Guard</h1>
           <p className="text-sm text-gray-400">CAP-0077 Quorum Freeze Command Center</p>
         </div>
-        <WalletConnect onConnect={setPublicKey} />
+        <div className="flex items-center gap-3">
+          <NetworkBadge />
+          <WalletConnect onConnect={setPublicKey} />
+        </div>
       </header>
 
       {alert && <AlertBanner message={alert} onDismiss={() => setAlert(null)} />}
